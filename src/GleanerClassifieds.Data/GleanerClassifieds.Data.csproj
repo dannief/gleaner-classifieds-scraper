@@ -49,13 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IGleanerClassifiedsDbContext.cs" />
-    <Compile Include="Migrations\201707130038361_Initial.cs" />
-    <Compile Include="Migrations\201707130038361_Initial.Designer.cs">
-      <DependentUpon>201707130038361_Initial.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\201707130642543_AddIsActiveFlagToNewListingAlertsTbl.cs" />
-    <Compile Include="Migrations\201707130642543_AddIsActiveFlagToNewListingAlertsTbl.Designer.cs">
-      <DependentUpon>201707130642543_AddIsActiveFlagToNewListingAlertsTbl.cs</DependentUpon>
+    <Compile Include="Migrations\201707140256001_Initial.cs" />
+    <Compile Include="Migrations\201707140256001_Initial.Designer.cs">
+      <DependentUpon>201707140256001_Initial.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Model\Ad.cs" />
@@ -69,11 +65,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\201707130038361_Initial.resx">
-      <DependentUpon>201707130038361_Initial.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\201707130642543_AddIsActiveFlagToNewListingAlertsTbl.resx">
-      <DependentUpon>201707130642543_AddIsActiveFlagToNewListingAlertsTbl.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\201707140256001_Initial.resx">
+      <DependentUpon>201707140256001_Initial.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

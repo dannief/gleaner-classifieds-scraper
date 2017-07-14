@@ -1,46 +1,55 @@
 ﻿using Akka.Actor;
 using Akka.Routing;
 using AngleSharp;
-using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
+using CSharpVerbalExpressions;
+using GleanerClassifieds.Data.Model;
+using GleanerClassifieds.Scraper.Messages;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Configuration;
 using System.Globalization;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace GleanerClassifieds.Scraper
 {
     public class ListPageScraper: ReceiveActor
-    {       
-        private readonly IDocument document;       
-        private readonly int categoryId;
-
-        private IActorRef adPersister;
-        private int numItems;
-        private List<int> savedAdIds = new List<int>();
+    {
+        private readonly string url;
+                
+        private IActorRef adDataStore;
+        private int numItems = -1;
+        private int savedAds = 0;
+        private ImmutableList<Category> Categories;
         
-        public ListPageScraper(string url, int categoryId)
-        {           
-            this.categoryId = categoryId;
-
-            var config = AngleSharp.Configuration.Default.WithDefaultLoader();
-            document = BrowsingContext.New(config).OpenAsync(url).Result;
-
+        public ListPageScraper(string url)
+        {
+            this.url = url;
+                        
             Receive<ScrapeListPage>(message => Handle(message));
-            Receive<AdPersister.AdSaved>(message => Handle(message));
+            Receive<TryMessage<ScrapeListPage>>(message => Handle(message));
+            Receive<AdDataStore.AdSaved>(message => Handle(message));
         }
 
-        public static Props Props(string url, int categoryId)
+        public static Props Props(string url)
         {
-            return Akka.Actor.Props.Create(() => new ListPageScraper(url, categoryId));
+            return Akka.Actor.Props.Create(() => new ListPageScraper(url));
         }
 
         public void Handle(ScrapeListPage message)
-        {            
+        {
+            Self.Tell(new TryMessage<ScrapeListPage>(message));          
+        }
+
+        public void Handle(TryMessage<ScrapeListPage> message)
+        {
+            // Get result rows
+            var config = AngleSharp.Configuration.Default.WithDefaultLoader();
+            var document = BrowsingContext.New(config).OpenAsync(url).Result;
+
             var tableRows = document.QuerySelectorAll("div.bcontent section section table tr:nth-child(3n+0)");
             numItems = tableRows.Length;
+
             for (int i = 0; i < numItems; i++)
             {               
                 var tableRow = tableRows[i] as IHtmlTableRowElement;
@@ -55,19 +64,19 @@ namespace GleanerClassifieds.Scraper
                         ConfigurationManager.AppSettings["DateFormat"], 
                         CultureInfo.InvariantCulture);
                                 
-                var (expiresOn, description) = ScrapeDetailPage(url);
+                var (expiresOn, description, categoryId, adId) = ScrapeDetailPage(url);
 
-                var saveAdMsg = new AdPersister.SaveAd(categoryId, title, description, listedOn, expiresOn);
+                var saveAdMsg = new AdDataStore.SaveAd(adId, categoryId, title, description, listedOn, expiresOn);
 
-                adPersister.Tell(saveAdMsg);
+                adDataStore.Tell(saveAdMsg);
             }            
         }
 
-        public void Handle(AdPersister.AdSaved msg)
+        public void Handle(AdDataStore.AdSaved msg)
         {
-            savedAdIds.Add(msg.AdId);
+            savedAds += 1;
 
-            if (savedAdIds.Count == numItems)
+            if (savedAds == numItems)
             {
                 Sender.Tell(new ScrapeListPageComplete());
             }
@@ -75,10 +84,31 @@ namespace GleanerClassifieds.Scraper
 
         protected override void PreStart()
         {
-            adPersister = Context.ActorOf(AdPersister.Props(), "ad-perister");            
+            adDataStore = Context.ActorOf(AdDataStore.Props().WithRouter(new RoundRobinPool(4)), "data-store");
+
+            // TODO: Tell instead of Ask. 
+            // Use Become to handle ScrapeListPage after GetCategories result.
+            // Stash ScrapeListPage messages until Become
+            var result = adDataStore.Ask(new AdDataStore.GetCategories()).Result as AdDataStore.GetCategoriesResult;
+            Categories = result.Categories;
         }
 
-        private (DateTime, string) ScrapeDetailPage(string url)
+        protected override void PreRestart(Exception reason, object message)
+        {
+            var msg = message as TryMessage<ScrapeListPage>;
+            if (msg != null)
+            {
+                if(msg.Retries <= 2)
+                {
+                    Context.System.Scheduler.ScheduleTellOnce(
+                        500, Self, new TryMessage<ScrapeListPage>(msg.Message, msg.Retries + 1), Self);
+                }
+            }
+
+            base.PreRestart(reason, message);
+        }
+
+        private (DateTime expiresOn, string description, int categoryId, int adId) ScrapeDetailPage(string url)
         {
             var config = AngleSharp.Configuration.Default.WithDefaultLoader();
             var document = BrowsingContext.New(config).OpenAsync(url).Result;
@@ -92,7 +122,22 @@ namespace GleanerClassifieds.Scraper
 
             var description = document.QuerySelector("article div.adcontent").OuterHtml;
 
-            return (dateExpires, description);
+            var titleH2 = document.QuerySelector("#ad-title h2");
+            var categoryName = titleH2.TextContent.Split(':')[1].Trim();
+
+                        
+            int? categoryId = Categories.SingleOrDefault(c => c.Name.ToLower() == categoryName.ToLower())?.Id;
+            int adId = int.Parse(
+                new VerbalExpressions()
+                .Then("ad_id/")
+                .BeginCapture("id")
+                .Multiple("[0-9]", false)
+                .EndCapture()
+                .ToRegex()
+                .Match(url)
+                .Groups["id"].Value);
+
+            return (dateExpires, description, categoryId.Value, adId);
         }
 
         #region Messages
@@ -104,7 +149,7 @@ namespace GleanerClassifieds.Scraper
         public class ScrapeListPageComplete
         {
         }
-
+                
         #endregion Messages
     }
 }

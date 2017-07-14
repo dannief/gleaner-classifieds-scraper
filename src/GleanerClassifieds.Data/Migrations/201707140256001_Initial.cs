@@ -11,7 +11,7 @@ namespace GleanerClassifieds.Data.Migrations
                 "dbo.Ads",
                 c => new
                     {
-                        Id = c.Int(nullable: false, identity: true),
+                        Id = c.Int(nullable: false),
                         CategoryId = c.Int(nullable: false),
                         Title = c.String(maxLength: 64),
                         Description = c.String(),
@@ -53,6 +53,7 @@ namespace GleanerClassifieds.Data.Migrations
                         SectionId = c.Int(),
                         Keywords = c.String(maxLength: 128),
                         LastAlerted = c.DateTime(),
+                        IsActive = c.Boolean(nullable: false),
                     })
                 .PrimaryKey(t => t.Id)
                 .ForeignKey("dbo.Categories", t => t.CategoryId)

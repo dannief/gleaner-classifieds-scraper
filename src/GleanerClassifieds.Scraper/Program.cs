@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GleanerClassifieds.Scraper
@@ -16,15 +17,25 @@ namespace GleanerClassifieds.Scraper
             using (var system = ActorSystem.Create("gleaner-classifieds-scraper"))
             {                                
                 var baseUrl = ConfigurationManager.AppSettings["BaseUrl"];
-                var pageSize = ConfigurationManager.AppSettings["PageSize"];
+                var pageSize = int.Parse(ConfigurationManager.AppSettings["PageSize"]);
                 var categoryId = 12518;
+                
+                var searchResultScraper = system.ActorOf(SearchResultsScraper.Props(pageSize), "search-results-scraper");
 
-                var listPageUrl = $"{baseUrl}&category_id={categoryId}&page_size={pageSize}";
-                var listPageScraper = system.ActorOf(ListPageScraper.Props(listPageUrl, categoryId), "list-page");
+                searchResultScraper.Tell(new SearchResultsScraper.Scrape(categoryId: categoryId));
 
-                var result = listPageScraper.Ask(new ListPageScraper.ScrapeListPage()).Result;
+                SearchResultsScraper.ScrapeStatus scrapeStatus = new SearchResultsScraper.ScrapeStatus(false);
+                do
+                {
+                    Task.Delay(5000).Wait();                    
+                    scrapeStatus =
+                        searchResultScraper.Ask(
+                            new SearchResultsScraper.GetScrapeStatus()).Result as SearchResultsScraper.ScrapeStatus;
+                }
+                while (!scrapeStatus.IsComplete);
 
-                Console.WriteLine("Actor System Shutting Down");
+                Console.WriteLine("Scraping Complete!");
+
                 Console.ReadKey();
             }
         }

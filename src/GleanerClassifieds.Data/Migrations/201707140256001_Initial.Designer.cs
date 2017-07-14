@@ -13,7 +13,7 @@ namespace GleanerClassifieds.Data.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "201707130038361_Initial"; }
+            get { return "201707140256001_Initial"; }
         }
         
         string IMigrationMetadata.Source
