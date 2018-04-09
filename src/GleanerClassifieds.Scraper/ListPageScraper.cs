@@ -66,6 +66,8 @@ namespace GleanerClassifieds.Scraper
                                 
                 var (expiresOn, description, categoryId, adId) = ScrapeDetailPage(url);
 
+                // TODO: Call SaveAds message with list of ads to save
+
                 var saveAdMsg = new AdDataStore.SaveAd(adId, categoryId, title, description, listedOn, expiresOn);
 
                 adDataStore.Tell(saveAdMsg);
@@ -74,6 +76,10 @@ namespace GleanerClassifieds.Scraper
 
         public void Handle(AdDataStore.AdSaved msg)
         {
+            // TODO: When actor restarts, still getting replies from previous send SaveAd messages
+            // At this point, the numItems will be -1 since handle hasn't been redone yet
+            // Ignore AdSaved messages when numItems = -1?
+
             savedAds += 1;
 
             if (savedAds == numItems)

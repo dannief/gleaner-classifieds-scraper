@@ -8,7 +8,7 @@ using System.Linq;
 namespace GleanerClassifieds.Scraper
 {
     public class AdDataStore: ReceiveActor
-    {
+    { 
 
         private ImmutableList<Category> Categories;
 
@@ -28,7 +28,7 @@ namespace GleanerClassifieds.Scraper
             using (var db = new GleanerClassifiedsDbContext())
             {
                 // If ad does not already exist ...
-                if (!db.Ads.Any(x => x.Id == msg.AdId))
+                if (!db.Ads.Any(x => x.Title.ToLower() == msg.Title.ToLower() && x.ListedOn == msg.ListedOn))
                 {
                     // save ad to db
                     var ad = new Ad

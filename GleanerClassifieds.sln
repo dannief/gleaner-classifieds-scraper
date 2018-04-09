@@ -1,13 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B24DB8DA-1764-490E-81B7-DF068E0F9D87}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GleanerClassifieds.Scraper", "src\GleanerClassifieds.Scraper\GleanerClassifieds.Scraper.csproj", "{73A8DF07-1FB0-4589-8B7D-7EC9D4A60726}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GleanerClassifieds.Data", "src\GleanerClassifieds.Data\GleanerClassifieds.Data.csproj", "{F5875F76-818C-4658-AFB4-48BC28FDF258}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{50C4C498-5438-40DC-A1EF-A83EC8586F3B}"
+	ProjectSection(SolutionItems) = preProject
+		ReadMe.md = ReadMe.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +35,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{73A8DF07-1FB0-4589-8B7D-7EC9D4A60726} = {B24DB8DA-1764-490E-81B7-DF068E0F9D87}
 		{F5875F76-818C-4658-AFB4-48BC28FDF258} = {B24DB8DA-1764-490E-81B7-DF068E0F9D87}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6E4EA86C-D85D-433E-982E-26169BFEECB1}
 	EndGlobalSection
 EndGlobal
